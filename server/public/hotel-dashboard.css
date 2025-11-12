@@ -1,0 +1,448 @@
+:root {
+  --bg-color: #0b1020;
+  --panel-color: #121933;
+  --text-color: #e9edff;
+  --muted-color: #9fb0d8;
+  --brand-color: #6ca8ff;
+  --success: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --radius: 14px;
+  --shadow: 0 15px 35px rgba(0,0,0,.3);
+}
+
+/* 🌞 الوضع الفاتح */
+[data-theme="light"] {
+  --bg-color: #f6f8fb;
+  --panel-color: #ffffff;
+  --text-color: #1e293b;
+  --muted-color: #64748b;
+  --brand-color: #0077ff;
+  --shadow: 0 15px 25px rgba(0,0,0,.08);
+}
+
+body {
+  margin: 0;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-size: 14px;
+  transition: background .3s ease, color .3s ease;
+}
+
+/* ====== الرأس ====== */
+.header {
+  background: linear-gradient(180deg, #2346a3, #1e3a8a);
+  color: #fff;
+  padding: 20px 0;
+  box-shadow: var(--shadow);
+}
+.header-row {
+  width: min(1100px, 94%);
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-row h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+.header-row p {
+  margin: 0;
+  font-size: 13px;
+  color: #e0e7ff;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ====== الأزرار ====== */
+.btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  border: none;
+  font-size: 13px;
+  transition: .2s;
+}
+.btn.ghost {
+  border: 1px solid var(--brand-color);
+  background: transparent;
+  color: var(--text-color);
+}
+.btn.ghost:hover { background: rgba(255,255,255,.05); }
+.btn.danger {
+  background: linear-gradient(180deg,#b91c1c,#ef4444);
+  color: #fff;
+}
+.btn.success {
+  background: linear-gradient(180deg,#15803d,#22c55e);
+  color: #fff;
+}
+
+
+
+/* ====== الإحصائيات ====== */
+.stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 18px auto;
+  width: min(1100px, 94%);
+}
+.chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--muted-color);
+  background: var(--panel-color);
+  color: var(--text-color);
+  font-size: 13px;
+}
+.chip.success { color:#86efac; border-color:#22c55e; }
+.chip.warn { color:#fde68a; border-color:#f59e0b; }
+.chip.danger { color:#fecaca; border-color:#ef4444; }
+.chip.info { color:#bae6fd; border-color:#38bdf8; }
+
+
+/* ====== شريط الأدوات ====== */
+.toolbar .inp {
+  background: var(--panel-color);
+  color: var(--text-color);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  padding: 7px 10px;
+  min-width: 180px;
+  outline: none;
+}
+.status-filters { display:flex; gap:6px; flex-wrap:wrap; }
+.chip.mini { padding: 3px 10px; font-size: 12px; cursor:pointer; }
+.chip.mini.active { background: var(--brand-color); color:#fff; border-color: transparent; }
+.auto-refresh { color: var(--muted-color); display:flex; gap:6px; align-items:center; user-select:none; }
+
+
+
+/* ====== الكروت ====== */
+.container { width: min(1100px, 94%); margin: auto; }
+.booking {
+  background: var(--panel-color);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  transition: all .2s ease;
+}
+.booking:hover { transform: translateY(-2px); }
+
+.booking h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.muted { color: var(--muted-color); }
+
+/* ====== الحالة ====== */
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.badge.confirmed { background:#052e1f; color:#86efac; }
+.badge.wait-deposit { background:#071f35; color:#93c5fd; }
+.badge.wait-hotel { background:#2a1b06; color:#fde68a; }
+.badge.rejected, .badge.cancelled { background:#2b0f12; color:#fecaca; }
+.badge.expired { background:#111827; color:#cbd5e1; }
+
+/* ====== Toast ====== */
+#toasts {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+.toast {
+  background: var(--panel-color);
+  border: 1px solid var(--muted-color);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+/* ====== Theme Toggle ====== */
+.theme-switch {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 999;
+}
+.theme-switch input { opacity:0; width:0; height:0; }
+.slider {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  background-color: #333;
+  border-radius: 30px;
+  transition: background-color 0.4s;
+}
+.slider::before {
+  content: "🌙";
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  font-size: 14px;
+  transition: transform 0.4s;
+}
+input:checked + .slider {
+  background-color: #4da3ff;
+}
+input:checked + .slider::before {
+  content: "☀️";
+  transform: translateX(20px);
+}
+
+/* ====== فراغات صغيرة ====== */
+.empty, .loading {
+  text-align: center;
+  color: var(--muted-color);
+  padding: 20px;
+  font-size: 13px;
+}
+a { color: var(--brand-color); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+
+
+/* ====== التبويبات ====== */
+.tabs {
+  display:flex;
+  gap:10px;
+  margin:10px 0;
+  justify-content:center;
+}
+.tab {
+  background: var(--panel-color);
+  color: var(--text-color);
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.tab.active {
+  background: var(--brand-color);
+  color:#fff;
+}
+
+.screen { display:none; }
+.screen.active { display:block; }
+
+
+/* ====== بطاقات الغرف ====== */
+.card.room {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-color);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+.room .info {
+  flex: 1;
+}
+.room .actions {
+  display: flex;
+  gap: 6px;
+}
+.room .price {
+  font-weight: 600;
+  color: var(--brand-color);
+}
+
+/* ===== تبويبات عامة ===== */
+.tabs { display:flex; gap:10px; margin:10px 0; justify-content:center; }
+.tab { background: var(--panel-color); color: var(--text-color); border:none; padding:8px 14px; border-radius:8px; cursor:pointer; }
+.tab.active { background: var(--brand-color); color:#fff; }
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* ===== بطاقات الإحصائيات ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap: 12px;
+}
+.stats-card {
+  background: var(--panel-color);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.08);
+}
+.stats-card h4 { margin:0 0 6px 0; font-weight:700; }
+.stats-card h2 { margin:5px 0 0; font-size:26px; color: var(--brand-color); }
+
+/* ===== نسبة الإشغال ===== */
+.occ-box {
+  background: #263241;
+  border-radius: 10px;
+  height: 18px;
+  margin: 8px 0 6px;
+  overflow: hidden;
+}
+.occ-bar {
+  height: 100%;
+  width: 0;
+  background: #22c55e; /* سيتغير بالـ JS */
+  transition: width .6s ease, background .3s ease;
+}
+
+/* ===== كانفاس الرسوم ===== */
+.chart { display:block; width:100%; max-width:100%; }
+
+
+/* 🧠 تحليل الأداء */
+.analytics {
+  margin-top: 20px;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.card.stat {
+  text-align: center;
+  padding: 18px;
+}
+.card.stat .label {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.card.stat .value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--brand2);
+}
+
+.analytics h3 {
+  color: var(--brand);
+  margin-bottom: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.analytics h3::before {
+  content: "💡";
+  font-size: 18px;
+}
+
+.grid4 {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.card.stat {
+  flex: 1 1 230px;
+  background: linear-gradient(180deg, var(--soft), var(--panel));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 25px rgba(97,213,255,0.15);
+  border-radius: var(--radius);
+  padding: 14px 10px;
+  transition: all .3s ease;
+}
+.card.stat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(108,168,255,0.3);
+}
+
+#chartClients {
+  max-width: 150px;
+  margin: 0 auto;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 0.9s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 0.9s ease forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ✨ تلوين النصوص التوضيحية في تحليل الأداء */
+.analytics .muted {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fcd34d; /* ذهبي لطيف */
+  text-shadow: 0 0 4px rgba(252, 211, 77, 0.25);
+}
+
+#revenues .value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #4ade80; /* أخضر ناعم للأرباح */
+}
+
+
+#hotelCalendar .fc-daygrid-event {
+  border-radius: 6px;
+  padding: 2px 5px;
+  font-size: 13px;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#hotelCalendar .fc-daygrid-event:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+#hotelCalendar .fc-toolbar-title {
+  font-weight: 700;
+  color: var(--primary, #333);
+}
+
+#roomFilter {
+  background: #fff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+}
+#roomFilter:focus {
+  outline: none;
+  border-color: var(--blue, #3b82f6);
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
+}

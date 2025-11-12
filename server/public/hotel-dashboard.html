@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MukallaStay | لوحة إدارة الفندق</title>
+  <link rel="stylesheet" href="hotel-dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 📅 FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+</head>
+<body>
+
+  <!-- 🌗 زر الوضع -->
+  <label class="theme-switch" title="تبديل الوضع">
+    <input type="checkbox" id="theme-toggle">
+    <span class="slider"></span>
+  </label>
+
+  <header class="header">
+    <div class="container header-row">
+      <div>
+        <h1>🏨 لوحة إدارة الفندق</h1>
+        <p id="welcome" class="muted">مرحبًا بك.</p>
+      </div>
+      <div class="actions">
+        <button id="refresh" class="btn ghost">🔄 تحديث</button>
+        <button id="logout" class="btn danger">🚪 تسجيل الخروج</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- 🔹 أزرار التبويبات -->
+    <nav class="tabs row center">
+      <button class="tab active" data-target="bookings">الحجوزات</button>
+      <button class="tab" data-target="rooms">الغرف</button>
+      <button class="tab" data-target="stats">الإحصائيات</button>
+      <button class="tab" data-target="seasons">الأسعار الموسمية</button>
+    </nav>
+
+    <!-- 🔹 شاشة الحجوزات -->
+    <section id="screen-bookings" class="screen active">
+      <div class="stats">
+        <div class="chip">الكل: <b id="sAll">0</b></div>
+        <div class="chip success">مؤكد: <b id="sConfirmed">0</b></div>
+        <div class="chip info">بانتظار العربون: <b id="sDeposit">0</b></div>
+        <div class="chip warn">بانتظار تأكيد الفندق: <b id="sWaitHotel">0</b></div>
+        <div class="chip danger">مرفوض/ملغي/منتهي: <b id="sBad">0</b></div>
+      </div>
+
+      <!-- 🔎 شريط الأدوات -->
+      <div class="toolbar container" style="margin-top:-6px;">
+        <div class="row" style="gap:8px; align-items:center;">
+          <input id="searchBox" type="text" placeholder="بحث بالاسم/الإيميل/المرجع..." class="inp">
+          <input id="dateFrom" type="date" class="inp">
+          <input id="dateTo" type="date" class="inp">
+
+          <div class="status-filters">
+            <button class="chip mini" data-status="ALL">الكل</button>
+            <button class="chip mini" data-status="WAITING_HOTEL_CONFIRM">بانتظار الفندق</button>
+            <button class="chip mini" data-status="AWAITING_DEPOSIT,DEPOSIT_SENT">بانتظار العربون</button>
+            <button class="chip mini" data-status="CONFIRMED">مؤكد</button>
+            <button class="chip mini" data-status="REJECTED,CANCELLED,EXPIRED">مرفوض/ملغي/منتهي</button>
+          </div>
+
+          <label class="auto-refresh">
+            <input id="autoRefresh" type="checkbox"> تحديث تلقائي (كل 30ث)
+          </label>
+
+          <div style="margin-inline-start:auto; display:flex; gap:8px;">
+            <button id="btnExport" class="btn ghost">⬇️ تصدير CSV</button>
+            <button id="btnPrint" class="btn ghost">🖨️ طباعة</button>
+            <span class="muted">نتائج: <b id="resultCount">0</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div id="list"></div>
+      <div id="empty" class="empty hidden">لا توجد حجوزات حتى الآن.</div>
+      <div id="loading" class="loading hidden">جارِ التحميل...</div>
+    </section>
+
+    <!-- 🔹 شاشة الغرف -->
+    <section id="screen-rooms" class="screen">
+      <div class="row space-between" style="margin-bottom:10px;">
+        <h3>إدارة الغرف</h3>
+        <button id="btnAddRoom" class="btn success">➕ إضافة غرفة</button>
+      </div>
+
+      <div id="roomsList"></div>
+      <div id="roomsEmpty" class="muted">لا توجد غرف حتى الآن.</div>
+    </section>
+
+    <!-- 🔹 شاشة الإحصائيات -->
+    <section id="screen-stats" class="screen">
+      
+      <h3>📈 إحصائيات الفندق</h3>
+
+      <!-- بطاقات أرقام عامة -->
+      <div id="statsCards" class="stats-grid" style="margin-top:10px;"></div>
+
+      <!-- نسبة إشغال الغرف -->
+      <div id="occupancyCard" class="stats-card" style="margin-top:15px;">
+        <h4>نسبة إشغال الغرف</h4>
+        <div id="occBarBox" class="occ-box">
+          <div id="occBar" class="occ-bar"></div>
+        </div>
+        <div id="occText" class="muted">جاري الحساب...</div>
+      </div>
+
+      <!-- رسم بياني: توزيع الحالات -->
+      <div class="stats-card" style="margin-top:15px;">
+        <h4>توزيع حالات الحجوزات</h4>
+        <canvas id="statsChart" width="700" height="220" class="chart"></canvas>
+      </div>
+
+      <!-- رسم بياني: حجوزات آخر 14 يوم -->
+      <div class="stats-card" style="margin-top:15px;">
+        <h4>الحجوزات خلال آخر 14 يومًا</h4>
+        <canvas id="dailyChart" width="700" height="220" class="chart"></canvas>
+      </div>
+
+      <!-- 📅 تقويم الحجوزات -->
+      <h3>📅 تقويم الحجوزات</h3>
+      
+      <!-- 🔹 فلتر الغرف المضافة -->
+      <div class="row" style="justify-content: flex-end; align-items:center; gap:8px; margin-bottom:10px;">
+        <label for="roomFilter" style="font-weight:600;">اختر الغرفة:</label>
+        <select id="roomFilter" class="inp" style="min-width:180px;">
+          <option value="all">كل الغرف</option>
+        </select>
+      </div>
+      
+      <div id="calendarContainer" style="margin-top:20px;">
+        <div id="hotelCalendar" style="max-width:100%; background:#fff; border-radius:10px; padding:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);"></div>
+      </div>
+
+      <!-- 🧠 تحليل الأداء -->
+      <section id="performance" class="analytics">
+        <h3>🧠 تحليل الأداء</h3>
+
+        <div class="grid4">
+          <div class="card stat">
+            <div class="label">⏱️ متوسط مدة الإقامة</div>
+            <canvas id="chartStay" height="80"></canvas>
+          </div>
+
+          <div class="card stat">
+            <div class="label">🏨 أكثر نوع غرفة حُجز</div>
+            <canvas id="chartRoom" height="80"></canvas>
+          </div>
+
+          <div class="card stat">
+            <div class="label">📅 أكثر شهر فيه حجوزات</div>
+            <canvas id="chartMonth" height="80"></canvas>
+          </div>
+
+          <div class="card stat">
+            <div class="label">👥 العملاء الجدد مقابل العائدين</div>
+            <canvas id="chartClients" height="80"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- 💼 نظام الإيرادات -->
+      <section id="revenues" class="analytics">
+        <h3>🏦 نظام الإيرادات</h3>
+
+        <div class="grid4">
+          <div class="card stat">
+            <div class="label">💰 مجموع العربون المستلم (5%)</div>
+            <div id="totalDeposit" class="value">—</div>
+          </div>
+
+          <div class="card stat">
+            <div class="label">🏨 أرباح الفندق (90% من العربون)</div>
+            <div id="monthlyRevenue" class="value">—</div>
+          </div>
+
+          <div class="card stat">
+            <div class="label">💵 عمولة الموقع (10% من العربون)</div>
+            <div id="netProfit" class="value">—</div>
+          </div>
+        </div>
+
+        <p style="text-align:center; color:#aaa; margin-top:10px;">
+          💡 توزيع الإيرادات: 90% للفندق — 10% للموقع (من العربون الكلي 5% الذي يدفعه العميل)
+        </p>
+
+        <div class="card" style="margin-top:20px;">
+          <h4 style="text-align:center;margin-bottom:10px;">📈 الإيرادات حسب الشهر</h4>
+          <canvas id="chartRevenuePerMonth" height="100"></canvas>
+        </div>
+      </section>
+    </section>
+
+    <!-- 🔹 شاشة الأسعار الموسمية -->
+    <section id="screen-seasons" class="screen">
+      <h3>🏷️ إدارة الأسعار الموسمية</h3>
+      <form id="seasonForm" class="row" style="gap:10px;flex-wrap:wrap;margin:10px 0;">
+        <input type="text" id="seasonName" class="input" placeholder="اسم الموسم (مثلاً: الصيف)" required>
+        <input type="date" id="seasonStart" class="input" required>
+        <input type="date" id="seasonEnd" class="input" required>
+        <input type="number" id="seasonPrice" class="input" placeholder="السعر الجديد $" required>
+        <input type="number" id="seasonMinStay" class="input" placeholder="الحد الأدنى للإقامة" value="1">
+        <select id="seasonRoom" class="input"></select>
+        <button type="submit" class="btn">➕ إضافة</button>
+      </form>
+      <table class="table" id="seasonTable">
+        <thead>
+          <tr>
+            <th>الموسم</th>
+            <th>من</th>
+            <th>إلى</th>
+            <th>السعر</th>
+            <th>الإقامة</th>
+            <th>الغرفة</th>
+            <th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <div id="toasts"></div>
+  </main>
+
+  <script src="hotel-dashboard.js"></script>
+</body>
+</html>

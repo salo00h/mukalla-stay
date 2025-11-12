@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MukallaStay — لوحة الإدارة الرئيسية</title>
+<link rel="stylesheet" href="./style.css" />
+<style>
+  @import url('./style.css');
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 800px at 100% -20%, #1b2a55 0%, #0b1020 50%, #080c18 100%);
+    color: #e9edff;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .container {
+    width: min(1200px, 92%);
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, rgba(10,14,30,.7), rgba(10,14,30,0));
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    padding: 14px 0;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #6ca8ff;
+  }
+  .brand-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: linear-gradient(45deg,#6ca8ff,#61d5ff);
+    box-shadow: 0 0 18px #61d5ff;
+    display: inline-block;
+    margin-left: 6px;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .btn {
+    background: linear-gradient(135deg, #6ca8ff, #61d5ff);
+    color: #061023;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(97,213,255,0.3);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: #6ca8ff;
+    border: 1px solid rgba(108,168,255,0.3);
+    box-shadow: none;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .card {
+    background: linear-gradient(180deg, #1a244a, #121933);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  .stat-title {
+    color: #97a0c3;
+    font-size: 13px;
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    margin-top: 8px;
+  }
+  .toasts {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+  }
+  .toast {
+    background: #1a244a;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    color: #e9edff;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  }
+</style>
+
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container row">
+    <div class="brand"><span class="brand-dot"></span>لوحة الإدارة — MUKALLASTAY</div>
+    <div class="controls">
+      <button class="btn ghost" onclick="window.open('admin.html','_self')">🔙 عودة</button>
+      <button id="refresh" class="btn">🔄 تحديث</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- 📊 الإحصائيات العامة -->
+  <section class="stats" id="stats">
+    <div class="card"><div class="stat-title">عدد الفنادق</div><div class="stat-value" id="totalHotels">—</div></div>
+    <div class="card"><div class="stat-title">عدد الحجوزات</div><div class="stat-value" id="totalBookings">—</div></div>
+    <div class="card"><div class="stat-title">العملاء النشطين</div><div class="stat-value" id="activeClients">—</div></div>
+    <div class="card"><div class="stat-title">💰 أرباح الموقع (1%)</div><div class="stat-value" id="siteRevenue">—</div></div>
+    <div class="card"><div class="stat-title">🏨 أرباح الفنادق (4%)</div><div class="stat-value" id="hotelsRevenue">—</div></div>
+  </section>
+
+  <!-- 📈 الرسومات -->
+  <section class="card" style="margin-top:20px; text-align:center;">
+    <div style="max-width: 700px; margin: 0 auto;">
+      <canvas id="chart" width="600" height="250" style="max-width:600px; height:250px; margin:auto; display:block;"></canvas>
+
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:25px; text-align:center;">
+    <h3 style="color:#97a0c3;font-size:14px;">توزيع عام</h3>
+    <div style="max-width:500px; margin:0 auto;">
+      <canvas id="chartPie" width="400" height="200" style="max-width:400px; height:200px; margin:auto; display:block;"></canvas>
+
+    </div>
+  </section>
+</main>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const API = "http://localhost:3000";
+let mainChart, pieChart;
+
+// 🔔 إشعارات صغيرة
+function toast(msg) {
+  const box = document.getElementById("toasts");
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.innerHTML = msg;
+  box.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// 📊 تحميل البيانات مرة واحدة فقط
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API}/api/admin/dashboard`);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || "فشل تحميل البيانات");
+
+    // تحديث القيم
+    document.getElementById("totalHotels").textContent = j.stats.totalHotels;
+    document.getElementById("totalBookings").textContent = j.stats.totalBookings;
+    document.getElementById("activeClients").textContent = j.stats.activeClients;
+    document.getElementById("siteRevenue").textContent = `$ ${j.stats.siteRevenue.toFixed(2)}`;
+    document.getElementById("hotelsRevenue").textContent = `$ ${j.stats.hotelsRevenue.toFixed(2)}`;
+
+    // 🧩 حذف أي رسوم قديمة قبل إعادة الرسم
+    if (mainChart) mainChart.destroy();
+    if (pieChart) pieChart.destroy();
+    Chart.defaults.maintainAspectRatio = false;
+
+
+    // 🎨 الرسم البياني الأساسي (الأعمدة)
+    const ctx = document.getElementById("chart").getContext("2d");
+    mainChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["الفنادق", "الحجوزات", "العملاء", "أرباح الموقع", "أرباح الفنادق"],
+        datasets: [{
+          label: "إحصائيات عامة",
+          data: [
+            j.stats.totalHotels,
+            j.stats.totalBookings,
+            j.stats.activeClients,
+            j.stats.siteRevenue,
+            j.stats.hotelsRevenue
+          ],
+          backgroundColor: ["#61d5ff","#6ca8ff","#facc15","#76ffa2","#c084fc"]
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: "#e9edff" } } },
+        scales: {
+          x: { ticks: { color: "#97a0c3" }, grid: { color: "rgba(255,255,255,.05)" } },
+          y: { ticks: { color: "#97a0c3" }, grid: { color: "rgba(255,255,255,.05)" } }
+        }
+      }
+    });
+
+    // 🍩 رسم بياني دائري إضافي
+    const pie = document.getElementById("chartPie");
+
+    pieChart = new Chart(pie.getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: ["فنادق", "عملاء نشطين", "حجوزات مؤكدة"],
+        datasets: [{
+          data: [
+            j.stats.totalHotels,
+            j.stats.activeClients,
+            j.stats.totalBookings
+          ],
+          backgroundColor: ["#61d5ff","#76ffa2","#facc15"]
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#e9edff" }
+          }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    toast("⚠️ فشل تحميل البيانات");
+  }
+}
+
+// 🔄 زر التحديث
+document.getElementById("refresh").addEventListener("click", loadDashboard);
+
+// 🚀 تشغيل أول مرة
+loadDashboard();
+</script>
+
+</body>
+</html>

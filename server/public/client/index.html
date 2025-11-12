@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MukallaStay — العميل</title>
+  <link rel="stylesheet" href="./style.css" />
+  <!-- خريطة Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+
+<body>
+  <!-- 🌗 زر تبديل الوضع -->
+  <label class="theme-switch" title="تبديل الوضع">
+    <input type="checkbox" id="theme-toggle" />
+    <span class="slider"></span>
+  </label>
+
+  <!-- 🔝 الشريط العلوي -->
+  <header class="topbar glassy">
+    <div class="wrap row">
+      <div class="brand">
+        <a href="/client/" class="logo-link">
+          <img src="/uploads/logo.jpg" alt="MukallaStay" class="logo reveal" />
+        </a>
+        <span class="brand-text reveal">MukallaStay — العميل</span>
+      </div>
+
+      <nav class="tabs">
+        <button class="tab active reveal" data-target="explore">استكشاف</button>
+        <button class="tab reveal" data-target="book">حجز جديد</button>
+        <button class="tab reveal" data-target="track">متابعة الحجز</button>
+        <button class="tab reveal" data-target="reviews">التقييمات ⭐</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 🏨 استكشاف -->
+    <section id="explore" class="screen active">
+      <!-- 🌴 شريط ترحيبي -->
+      <div class="welcome-box" style="margin-top:10px;">
+        <h3>🏨 أهلاً بك في <span class="highlight">MukallaStay</span>!</h3>
+        <p>استكشف فنادق المكلا المتاحة واحجز بسهولة وخطوة بخطوة ✨</p>
+      </div>
+
+      <!-- 🎯 شريط التصفية -->
+      <div class="filters row" style="justify-content:center; gap:10px; margin-top:15px;">
+        <select id="filterCity" class="select filter">
+          <option value="">📍 كل المدن</option>
+          <option value="Mukalla">المكلا</option>
+          <option value="Aden">عدن</option>
+          <option value="Sana'a">صنعاء</option>
+        </select>
+
+        <select id="filterType" class="select filter">
+          <option value="">🏨 جميع الأنواع</option>
+          <option value="hotel">فندق</option>
+          <option value="apartment">شقة فندقية</option>
+          <option value="resort">منتجع</option>
+        </select>
+
+        <select id="filterSort" class="select filter">
+          <option value="">🔽 الترتيب الافتراضي</option>
+          <option value="low">السعر الأقل</option>
+          <option value="high">السعر الأعلى</option>
+        </select>
+
+        <button id="btnApplyFilters" class="btn">تصفية 🔍</button>
+      </div>
+
+      <h2 class="h2 reveal">الفنادق المتاحة</h2>
+
+      <!-- 🗺️ زر عرض الخريطة -->
+      <button id="btnShowMap" class="btn" style="margin-bottom:10px">🗺️ عرض خريطة الفنادق</button>
+
+      <!-- صندوق الخريطة (مخفي مبدئياً) -->
+      <div id="mapBox" style="display:none; margin-bottom:20px; border-radius:12px; overflow:hidden;">
+        <div id="map" style="height:400px; width:100%;"></div>
+      </div>
+
+      <div id="hotels" class="grid reveal"></div>
+      <div id="hotelsEmpty" class="empty">لا توجد فنادق حالياً.</div>
+
+      <!-- عرض تفاصيل الفندق -->
+      <div id="hotelView" class="hotel-view" style="display:none">
+        <div class="hotel-header">
+          <div class="hotel-header-left">
+            <img id="hvImage" class="hotel-header-img" src="/images/hotel_placeholder.jpg" alt="Hotel Image">
+            <div>
+              <h2 id="hvName" class="hotel-header-title">اسم الفندق</h2>
+              <p id="hvMeta" class="hotel-header-meta">العنوان — المدينة</p>
+              <p id="hvRating" class="hotel-header-meta" style="color:gold;font-weight:600;margin-top:3px;">
+               ⭐ لا توجد تقييمات بعد
+              </p>
+            </div>
+          </div>
+          <button id="btnBackHotels" class="back-btn">⬅ رجوع</button>
+        </div>
+
+        <div id="hotelRooms" class="grid"></div>
+        <div id="hotelRoomsEmpty" class="empty">لا توجد غرف لهذا الفندق حالياً.</div>
+        
+        <div id="calendarBox" class="card" style="margin-top:20px;">
+          <h3>🗓️ التواريخ المحجوزة</h3>
+          <div id="calendarDays" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 📝 إنشاء حجز جديد -->
+    <section id="book" class="screen">
+      <h2 class="h2">إنشاء حجز جديد</h2>
+
+      <form id="formBook" class="form">
+        <div class="field">
+          <label>اسم العميل</label>
+          <input type="text" id="bName" class="input" required />
+        </div>
+
+        <div class="field">
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="bEmail" class="input" required />
+        </div>
+        <div class="field">
+          <label>رقم الهاتف (واتساب)</label>
+          <input type="tel" id="bPhone" class="input" placeholder="+9677XXXXXXX" required />
+        </div>
+
+
+        <div class="field">
+          <label>الفندق</label>
+          <select id="bHotel" class="select" required></select>
+        </div>
+
+        <div class="field">
+          <label>الغرفة</label>
+          <select id="bRoom" class="select" required></select>
+        </div>
+
+        <div class="field">
+          <label>تاريخ الوصول</label>
+          <input type="date" id="bIn" class="input" required />
+        </div>
+
+        <div class="field">
+          <label>تاريخ المغادرة</label>
+          <input type="date" id="bOut" class="input" required />
+        </div>
+
+        <!-- 🔢 السعر والعربون -->
+        <div id="priceSummary" class="policy">
+          💰 سيتم حساب السعر الإجمالي بعد اختيار التواريخ والغرفة.
+        </div>
+
+        <button type="submit" class="btn primary">📩 إرسال الطلب</button>
+      </form>
+
+      <div id="bookResult" class="policy"></div>
+
+      <!-- سياسة الحجز والدفع -->
+      <div class="policy">
+        <h3>سياسة الحجز والدفع</h3>
+        <ul>
+          <li>الفندق يراجع الطلب خلال 24 ساعة. عند الموافقة سيُطلب دفع عربون 5% خلال يوم.</li>
+          <li>الدفع الكامل قبل 7 أيام من الوصول.</li>
+          <li>إلغاء قبل 7 أيام: استرجاع العربون، بعد ذلك: لا يُسترجع.</li>
+          <li>تفاصيل تواصل الفندق تظهر بعد الدفع الكامل.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 📦 متابعة الحجز -->
+    <section id="track" class="screen">
+      <div class="welcome-box">
+        <h3>👋 أهلاً بك في <span class="highlight">MukallaStay</span></h3>
+        <p>يمكنك هنا متابعة جميع <b>حجوزاتك</b> بسهولة، ومعرفة حالتها خطوة بخطوة.</p>
+      </div>
+
+      <h2 class="h2 center">📦 متابعة حالة الحجز</h2>
+
+      <div class="track-header">
+        <input id="tRef" class="input wide" placeholder="🔎 أدخل رقم الحجز (مثل: MS-2025-12345)" />
+        <button id="btnTrack" class="btn primary">بحث</button>
+      </div>
+
+      <div class="track-header">
+        <input id="tEmail" class="input wide" type="email" placeholder="📧 أدخل بريدك الإلكتروني لعرض جميع الحجوزات" />
+        <button id="btnTrackEmail" class="btn gradient">عرض جميع الحجوزات</button>
+      </div>
+
+      <div id="allBookings" style="margin-top:15px;"></div>
+      <div id="trackCard" class="card"></div>
+
+      <!-- 💰 رفع إثبات الدفع -->
+      <div id="payBox" style="display:none; margin-top:20px;">
+        <h3>💰 رفع إثبات دفع العربون</h3>
+
+        <label>طريقة الدفع:</label>
+        <select id="payMethod" class="select">
+          <option value="bank">تحويل بنكي</option>
+          <option value="cash">نقدًا</option>
+        </select>
+
+        <label>مبلغ العربون:</label>
+        <input type="number" id="payAmount" min="1" step="0.01" class="input" placeholder="المبلغ بالدولار" />
+
+        <label>صورة الإيصال:</label>
+        <input type="file" id="payFile" accept="image/*" class="input" />
+
+        <button id="btnSendProof" class="btn primary" type="button" style="margin-top:10px;">
+          📤 إرسال إثبات الدفع
+        </button>
+      </div>
+    </section>
+
+    <!-- ⭐ التقييمات -->
+    <section id="reviews" class="screen">
+      <h2 class="h2 center">⭐ تقييمات العملاء</h2>
+      <div id="avgRatings" class="grid" style="margin-bottom:20px;"></div>
+
+      <div id="reviewsList" class="grid"></div>
+      <div id="noReviews" class="empty">لا توجد تقييمات بعد.</div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3>📝 أضف تقييمك</h3>
+        <input type="email" id="revEmail" class="input" placeholder="📧 أدخل بريدك الإلكتروني">
+        <button id="btnLoadMyBookings" class="btn">عرض حجوزاتي المؤكدة</button>
+
+        <div id="revBookingsBox" style="margin-top:10px;"></div>
+        
+        <!-- ✅ نافذة منبثقة لإضافة التقييم -->
+        <div id="reviewModal" class="modal" style="display:none;">
+          <div class="modal-content">
+            <h3>📝 أضف تقييمك</h3>
+            <select id="revRating" class="select" style="margin-bottom:10px;">
+              <option value="5">⭐⭐⭐⭐⭐ ممتاز جداً</option>
+              <option value="4">⭐⭐⭐⭐ جيد جداً</option>
+              <option value="3">⭐⭐⭐ جيد</option>
+              <option value="2">⭐⭐ مقبول</option>
+              <option value="1">⭐ سيء</option>
+            </select>
+            <textarea id="revComment" class="input" placeholder="اكتب رأيك..." rows="3"></textarea>
+            <div class="row" style="justify-content:space-between;margin-top:10px;">
+              <button id="btnCancelReview" class="btn small red">إلغاء</button>
+              <button id="btnAddReview" class="btn small">إرسال ✅</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- رسائل التنبيه -->
+  <div id="toasts" class="toasts"></div>
+
+  <!-- ⚙️ سكربت التطبيق -->
+  <script src="./main.js"></script>
+
+  <!-- 💬 زر تواصل واتساب -->
+  <a href="https://wa.me/0033777263112"
+     target="_blank"
+     class="whatsapp-float"
+     title="تواصل معنا عبر واتساب">
+    💬 تواصل مع الإدارة
+  </a>
+</body>
+</html>

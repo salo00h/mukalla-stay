@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MukallaStay | دخول الفندق</title>
+  <link rel="stylesheet" href="hotel-dashboard.css" />
+</head>
+<body class="bg">
+  <header class="header">
+    <div class="container">
+      <h1>🔑 دخول/تسجيل الفندق</h1>
+      <p class="muted">ادخل بحساب الفندق أو أنشئ حسابًا جديدًا.</p>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    <div class="card tabs">
+      <div class="tabbar">
+        <button class="tab active" data-target="#login">تسجيل الدخول</button>
+        <button class="tab" data-target="#register">إنشاء حساب</button>
+      </div>
+
+      <!-- تسجيل الدخول -->
+      <form id="login" class="form section active">
+        <label>البريد الإلكتروني</label>
+        <input id="loginEmail" type="email" placeholder="hotel@example.com" required />
+        <label>كلمة المرور</label>
+        <input id="loginPassword" type="password" placeholder="••••••••" required />
+        <button type="submit" class="btn primary full">دخول</button>
+      </form>
+
+      <!-- إنشاء الحساب -->
+      <form id="register" class="form section">
+        <label>اسم الفندق</label>
+        <input id="regName" type="text" placeholder="The View Hotel" required />
+        <label>البريد الإلكتروني</label>
+        <input id="regEmail" type="email" placeholder="hotel@example.com" required />
+        <label>كلمة المرور</label>
+        <input id="regPassword" type="password" placeholder="كلمة قوية" required />
+        <button type="submit" class="btn success full">إنشاء الحساب</button>
+      </form>
+    </div>
+
+    <div id="toasts"></div>
+  </main>
+
+  <script>
+    const API = "http://localhost:3000";
+
+    // تبويب
+    document.querySelectorAll(".tab").forEach((t) => {
+      t.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        t.classList.add("active");
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        document.querySelector(t.dataset.target).classList.add("active");
+      });
+    });
+
+    // توست بسيط
+    const toasts = document.getElementById("toasts");
+    function toast(msg, type="info") {
+      const d = document.createElement("div");
+      d.className = "toast " + type;
+      d.innerHTML = msg;
+      toasts.appendChild(d);
+      setTimeout(()=>d.remove(), 3500);
+    }
+
+    // تسجيل الدخول
+    document.getElementById("login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+
+      try {
+        const r = await fetch(`${API}/api/hotel/login`, {
+
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ email, password })
+        });
+        const j = await r.json();
+        if (!r.ok || j.ok === false) throw new Error(j.error || "فشل الدخول");
+
+        // نتوقّع أن يرجع السيرفر: { ok:true, hotel:{id,name,email} }
+        localStorage.setItem("hotel", JSON.stringify(j.hotel));
+        toast("تم تسجيل الدخول ✅", "success");
+        location.href = "hotel-dashboard.html";
+      } catch (err) {
+        toast(err.message || "خطأ في السيرفر", "danger");
+      }
+    });
+
+    // إنشاء الحساب
+    document.getElementById("register").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value.trim();
+
+      try {
+        const r = await fetch(`${API}/api/admin/hotel-register`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ name, email, password })
+        });
+        const j = await r.json();
+        if (!r.ok || j.ok === false) throw new Error(j.error || "فشل إنشاء الحساب");
+
+        toast("تم إنشاء الحساب بنجاح ✅ - يمكنك تسجيل الدخول الآن", "success");
+        // تحويل تلقائي لتبويب الدخول
+        document.querySelector('.tab[data-target="#login"]').click();
+      } catch (err) {
+        toast(err.message || "خطأ في السيرفر", "danger");
+      }
+    });
+
+    // إذا كان مسجّل مسبقًا
+    const current = localStorage.getItem("hotel");
+    if (current) location.href = "hotel-dashboard.html";
+  </script>
+  <script src="hotel-login.js"></script>
+
+</body>
+</html>
