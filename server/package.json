@@ -1,9 +1,11 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
+  "description": "MukallaStay backend server",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "postinstall": "npm rebuild sqlite3 --build-from-source",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,5 +20,8 @@
     "nodemailer": "^7.0.9",
     "sqlite3": "^5.1.7",
     "twilio": "^5.10.3"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
