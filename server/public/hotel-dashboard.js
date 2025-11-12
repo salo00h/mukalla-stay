@@ -1,4 +1,5 @@
-const API = "http://localhost:3000";
+const API = "https://mukalla-stay.onrender.com";
+
 
 // 🏨 بيانات الجلسة
 const hotel = JSON.parse(localStorage.getItem("hotel") || "null");
