@@ -20,11 +20,18 @@ async function notifyBookingEvent(event, booking) {
     let msg = "";
     switch (event) {
       case "BOOKING_CREATED":
-        msg = `مرحبًا ${name} 👋
-تم استلام طلب حجزك رقم ${ref} في ${hotel}.
-سيقوم الفندق بمراجعته خلال 24 ساعة.
-شكرًا لاستخدامك MukallaStay 💙`;
-        break;
+  console.log("📨 إرسال Template booking_confirmation ...");
+
+  await sendWhatsAppTemplate(phone, "booking_confirmation", [
+    name,                    // {{1}} اسم العميل
+    hotel,                   // {{2}} اسم الفندق
+    booking.checkin_date,    // {{3}} تاريخ الوصول
+    "بدون وقت",              // {{4}} لأن ما عندك arrival_time
+    booking.final_price + "€"// {{5}} السعر النهائي
+  ]);
+
+  return;
+
 
       case "HOTEL_CONFIRMED":
         msg = `🏨 تمت موافقة الفندق على حجزك رقم ${ref} (${hotel}).
@@ -56,7 +63,8 @@ async function notifyBookingEvent(event, booking) {
     }
 
     console.log(`🚀 إرسال إشعار ${event} إلى ${phone}`);
-    await sendWhatsAppMeta(phone, msg);
+    console.log("⚠️ لم يتم إرسال رسالة، تحتاج Template لهذه الحالة:", event);
+
   } catch (err) {
     console.error(`❌ خطأ أثناء تنفيذ notifyBookingEvent (${event}):`, err.message);
   }
