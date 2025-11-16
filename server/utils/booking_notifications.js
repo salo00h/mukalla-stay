@@ -2,8 +2,6 @@
 const db = require("../db/sqlite");
 const { sendWhatsAppTemplate } = require("./whatsapp_meta.js");
 
-
-
 // 🔔 دالة الإشعارات الموحدة لجميع الأحداث
 async function notifyBookingEvent(event, booking) {
   try {
@@ -17,52 +15,41 @@ async function notifyBookingEvent(event, booking) {
       return;
     }
 
-    let msg = "";
     switch (event) {
+      // ✅ الحالة الوحيدة اللي عندنا لها Template حاليًا
       case "BOOKING_CREATED":
-        msg = `مرحبًا ${name} 👋
-تم استلام طلب حجزك رقم ${ref} في ${hotel}.
-سيقوم الفندق بمراجعته خلال 24 ساعة.
-شكرًا لاستخدامك MukallaStay 💙`;
-        break;
+        console.log("📨 إرسال Template booking_confirmation ...");
 
+        await sendWhatsAppTemplate(phone, "booking_confirmation", [
+          name,                     // {{1}} اسم العميل
+          hotel,                    // {{2}} اسم الفندق
+          booking.checkin_date,     // {{3}} تاريخ الوصول
+          "بدون وقت",               // {{4}} وقت الوصول (ما عندنا عمود وقت)
+          booking.final_price + "€" // {{5}} المبلغ النهائي
+        ]);
+
+        return;
+
+      // باقي الحالات لسه ما عندها Templates
       case "HOTEL_CONFIRMED":
-        msg = `🏨 تمت موافقة الفندق على حجزك رقم ${ref} (${hotel}).
-يرجى دفع العربون خلال 24 ساعة لتأكيد الحجز.`;
-        break;
-
       case "DEPOSIT_UPLOADED":
-        msg = `💰 تم استلام إيصال دفع العربون لحجزك رقم ${ref}.
-سيتم مراجعته من قِبل إدارة الموقع قريبًا.`;
-        break;
-
       case "DEPOSIT_CONFIRMED":
-        msg = `✅ تم تأكيد العربون بنجاح.
-حجزك في ${hotel} أصبح مؤكدًا بالكامل 🎉`;
-        break;
-
       case "REMINDER_FINAL_PAYMENT":
-        msg = `⏰ تذكير: يجب دفع المبلغ المتبقي لحجزك رقم ${ref} قبل 5 أيام من تاريخ الوصول لتجنب الإلغاء.`;
-        break;
-
       case "BOOKING_CANCELLED":
-        msg = `❌ تم إلغاء حجزك رقم ${ref} بسبب عدم إتمام الإجراءات المطلوبة في الوقت المحدد.
-نأمل حجزك معنا مرة أخرى 💙`;
-        break;
+        console.log(
+          `⚠️ الحدث ${event} لا يملك Template بعد، لن يتم إرسال رسالة واتساب.`
+        );
+        return;
 
       default:
         console.log("⚠️ حدث غير معروف:", event);
         return;
     }
-
-    console.log(`🚀 إرسال إشعار ${event} إلى ${phone}`);
-    await sendWhatsAppMeta(phone, msg);
   } catch (err) {
     console.error(`❌ خطأ أثناء تنفيذ notifyBookingEvent (${event}):`, err.message);
   }
 }
 
-// 🧾 إشعار خاص عند رفع إيصال العربون
 // 🧾 إشعار خاص عند رفع إيصال العربون
 async function sendDepositProofNotification(bookingRef) {
   try {
@@ -88,16 +75,10 @@ async function sendDepositProofNotification(bookingRef) {
       return;
     }
 
-    const msg = `💰 عزيزي ${booking.client_name}،
-تم استلام إيصال دفع العربون بنجاح ✅
-سيتم مراجعته من قِبل إدارة الموقع خلال الساعات القادمة.
-رقم الحجز: ${booking.booking_ref}
-الفندق: ${booking.hotel_name}
-شكرًا لاستخدامك MukallaStay 💙`;
-
-    console.log(`🚀 إرسال إشعار إيصال الدفع إلى ${booking.client_phone}`);
-    await sendWhatsAppMeta(booking.client_phone, msg);
-
+    console.log(
+      `⚠️ sendDepositProofNotification: لا يوجد Template مخصّص بعد، لن يتم إرسال رسالة.`
+    );
+    // لو حاب، نقدر نعيد استخدام booking_confirmation هنا أو نعمل Template جديد
 
   } catch (err) {
     console.error("❌ خطأ أثناء إرسال إشعار إيصال العربون:", err);
