@@ -1,7 +1,6 @@
 // server/utils/booking_notifications.js
 const db = require("../db/sqlite");
-const { sendWhatsAppTemplate } = require("./whatsapp_meta.js");
-
+const { sendWhatsAppMeta } = require("./whatsapp_meta.js");
 
 
 // 🔔 دالة الإشعارات الموحدة لجميع الأحداث
@@ -20,18 +19,11 @@ async function notifyBookingEvent(event, booking) {
     let msg = "";
     switch (event) {
       case "BOOKING_CREATED":
-  console.log("📨 إرسال Template booking_confirmation ...");
-
-  await sendWhatsAppTemplate(phone, "booking_confirmation", [
-    name,                    // {{1}} اسم العميل
-    hotel,                   // {{2}} اسم الفندق
-    booking.checkin_date,    // {{3}} تاريخ الوصول
-    "بدون وقت",              // {{4}} لأن ما عندك arrival_time
-    booking.final_price + "€"// {{5}} السعر النهائي
-  ]);
-
-  return;
-
+        msg = `مرحبًا ${name} 👋
+تم استلام طلب حجزك رقم ${ref} في ${hotel}.
+سيقوم الفندق بمراجعته خلال 24 ساعة.
+شكرًا لاستخدامك MukallaStay 💙`;
+        break;
 
       case "HOTEL_CONFIRMED":
         msg = `🏨 تمت موافقة الفندق على حجزك رقم ${ref} (${hotel}).
@@ -63,8 +55,7 @@ async function notifyBookingEvent(event, booking) {
     }
 
     console.log(`🚀 إرسال إشعار ${event} إلى ${phone}`);
-    console.log("⚠️ لم يتم إرسال رسالة، تحتاج Template لهذه الحالة:", event);
-
+    await sendWhatsAppMeta(phone, msg);
   } catch (err) {
     console.error(`❌ خطأ أثناء تنفيذ notifyBookingEvent (${event}):`, err.message);
   }
