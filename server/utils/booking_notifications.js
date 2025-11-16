@@ -1,6 +1,7 @@
 // server/utils/booking_notifications.js
 const db = require("../db/sqlite");
-const { sendWhatsAppMeta } = require("./whatsapp_meta.js");
+const { sendWhatsAppTemplate } = require("./whatsapp_meta.js");
+
 
 
 // 🔔 دالة الإشعارات الموحدة لجميع الأحداث
