@@ -1,11 +1,9 @@
+// server/utils/whatsapp_meta.js
 const axios = require("axios");
 
-/**
- * إرسال Template WhatsApp
- */
-async function sendWhatsAppTemplate(to, templateName, params = []) {
+async function sendWhatsAppTemplate(to, templateName, paramsArray) {
   try {
-    const url = `https://graph.facebook.com/v20.0/${process.env.META_PHONE_ID}/messages`;
+    const url = `https://graph.facebook.com/v19.0/${process.env.META_PHONE_ID}/messages`;
 
     const payload = {
       messaging_product: "whatsapp",
@@ -17,10 +15,13 @@ async function sendWhatsAppTemplate(to, templateName, params = []) {
         components: [
           {
             type: "body",
-            parameters: params.map((p) => ({ type: "text", text: p })),
-          },
-        ],
-      },
+            parameters: paramsArray.map(v => ({
+              type: "text",
+              text: v
+            }))
+          }
+        ]
+      }
     };
 
     const headers = {
@@ -29,9 +30,10 @@ async function sendWhatsAppTemplate(to, templateName, params = []) {
     };
 
     const res = await axios.post(url, payload, { headers });
-    console.log("✅ Template sent:", res.data);
+    console.log("✅ Meta Template sent:", res.data);
+
   } catch (err) {
-    console.error("❌ Template send error:", err.response?.data || err.message);
+    console.error("❌ Meta template send error:", err.response?.data || err.message);
   }
 }
 
