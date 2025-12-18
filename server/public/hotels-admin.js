@@ -1,4 +1,5 @@
-const API = "http://localhost:3000";
+const API = window.location.origin;
+
 
 async function loadPendingHotels() {
   const box = document.getElementById("hotelsList");
