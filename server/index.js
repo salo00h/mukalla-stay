@@ -65,12 +65,14 @@ app.use("/api/rooms", require("./routes/rooms"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/messages", require("./routes/messages"));
 app.use("/api/calendar", require("./routes/calendar"));
+
+app.use("/api/hotel", require("./routes/hotel_auth"));
 app.use("/api/hotel", require("./routes/hotel-analytics"));
 app.use("/api/hotel", require("./routes/hotel-revenues"));
 app.use("/api/admin", require("./routes/admin_hotel_details"));
 app.use("/api/seasons", require("./routes/seasonalPrices"));
 app.use("/api/public/hotels", require("./routes/hotel_signup"));
-app.use("/api/hotel", require("./routes/hotel_auth"));
+
 app.use("/api/admin", require("./routes/admin_dashboard"));
 
 
