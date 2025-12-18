@@ -1,5 +1,6 @@
 // ==================== الإعدادات ====================
-const API = "http://localhost:3000";
+const API = window.location.origin;
+
 
 // خريطة نص الحالة + اللون (مضاف AWAITING_DEPOSIT)
 // خريطة نص الحالة + اللون (مضاف AWAITING_DEPOSIT)
