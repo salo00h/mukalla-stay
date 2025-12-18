@@ -1,4 +1,5 @@
-const API = "";
+const API = window.location.origin;
+
 
 
 // 🏨 بيانات الجلسة
