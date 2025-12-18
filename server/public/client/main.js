@@ -29,7 +29,16 @@ const STATUS_COLOR = {
   CANCELLED: "var(--red)",
   EXPIRED: "var(--red)",
 };
+// ==================== أدوات الصور ====================
+function fixImagePath(url) {
+  if (!url) return "/uploads/view.jpeg";
 
+  // إذا كان المسار جاهز
+  if (url.startsWith("/uploads/")) return url;
+
+  // إذا كان اسم ملف فقط
+  return "/uploads/" + url;
+}
 // ==================== أدوات صغيرة ====================
 const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
@@ -91,8 +100,10 @@ function renderHotels() {
     card.className = "card hotel-card";
     card.style.animationDelay = i * 60 + "ms";
 
-    const cover =
-      h.cover_url || h.photo_url || h.image_url || "/images/hotel_placeholder.jpg";
+    const cover = fixImagePath(h.photo_url);
+
+
+
 
     // ⭐ نص التقييم (متوسط / عدد التقييمات أو "لا توجد تقييمات")
     const ratingText = h.avg_rating
@@ -143,10 +154,7 @@ async function openHotel(hotelId) {
   if (hvName) hvName.textContent = hotel.name;
   if (hvMeta) hvMeta.textContent = `${hotel.area || ""} — ${hotel.address || ""}`;
   const hvImage = $("#hvImage");
-  if (hvImage) hvImage.src = hotel.cover_url || hotel.photo_url || "/images/hotel_placeholder.jpg";
-
-
-
+  if (hvImage) hvImage.src = fixImagePath(hotel.photo_url);
 
   // إظهار واجهة الفندق
   const hotelsGrid = $("#hotels");
@@ -161,6 +169,7 @@ async function openHotel(hotelId) {
   const roomsEmpty = $("#hotelRoomsEmpty");
   if (!grid) return;
   grid.innerHTML = "";
+
   const rooms = roomsCache.filter((r) => String(r.hotel_id) === String(hotelId));
 
   if (!rooms.length) {
@@ -173,22 +182,64 @@ async function openHotel(hotelId) {
     const el = document.createElement("div");
     el.className = "card room";
     el.style.animationDelay = i * 50 + "ms";
+
+    // ✅ صور متعددة (آمنة)
+    let extraPhotos = [];
+    try {
+      extraPhotos = r.photos_json ? JSON.parse(r.photos_json) : [];
+      if (!Array.isArray(extraPhotos)) extraPhotos = [];
+    } catch (e) {
+      extraPhotos = [];
+    }
+
+    const images = [
+      r.photo_url,
+      ...extraPhotos.filter(p => p !== r.photo_url)
+    ].filter(Boolean);
+
+    const mainImg = images[0] || "/images/placeholder.jpg";
+    const thumbs = images.slice(1, 4);
+
+    // ✅ التعديل المطلوب فقط هنا (Slider)
     el.innerHTML = `
-      <img src="${r.photo_url || "/images/placeholder.jpg"}" alt="">
+      <div class="room-image"
+           data-images='${JSON.stringify(images)}'
+           data-index="0">
+
+        <img src="${fixImagePath(mainImg)}" class="room-main-img" alt="">
+
+        <!-- أزرار التقليب -->
+        <button class="slider-btn prev">‹</button>
+        <button class="slider-btn next">›</button>
+
+        <!-- الصور المصغّرة -->
+        <div class="room-thumbs">
+          ${thumbs.map(
+            (img) => `<img src="${fixImagePath(img)}" class="room-thumb">`
+          ).join("")}
+        </div>
+      </div>
+
       <div class="meta">
         <div class="row" style="justify-content:space-between">
           <div>
             <div style="font-weight:800">${r.name}</div>
-            <div class="muted" style="font-size:12px">${hotel.name} — ${hotel.area || ""}</div>
+            <div class="muted" style="font-size:12px">
+              ${hotel.name} — ${hotel.area || ""}
+            </div>
           </div>
           <div class="badge"><span>السعر</span> ${r.price} $ /ليلة</div>
         </div>
+
         <div class="row" style="margin-top:8px;justify-content:space-between">
           <div class="muted">الاستيعاب: ${r.capacity} أشخاص</div>
-          <button class="btn" data-h="${r.hotel_id}" data-r="${r.id}">احجز هذه الغرفة</button>
+          <button class="btn" data-h="${r.hotel_id}" data-r="${r.id}">
+            احجز هذه الغرفة
+          </button>
         </div>
       </div>
     `;
+
     grid.appendChild(el);
   });
 
@@ -208,26 +259,48 @@ async function openHotel(hotelId) {
   );
 
   // 🗓️ تحميل الأيام المحجوزة
-try {
-  const res = await jfetch(API + "/api/calendar/" + hotelId);
-  const cal = $("#calendarDays");
-  if (res.calendar?.length) {
-    cal.innerHTML = res.calendar
-      .map(
-        (d) =>
-          `<span style="padding:6px 10px;border-radius:6px;background:${
-            d.status === "booked" ? "#ff4d4d" : "#22c55e"
-          };color:white;font-size:13px;">${d.date}</span>`
-      )
-      .join("");
-  } else {
-    cal.innerHTML = "<div class='muted'>لا توجد أيام محجوزة حالياً.</div>";
+  try {
+    const res = await jfetch(API + "/api/calendar/" + hotelId);
+    const cal = $("#calendarDays");
+    if (res.calendar?.length) {
+      cal.innerHTML = res.calendar
+        .map(
+          (d) =>
+            `<span style="padding:6px 10px;border-radius:6px;background:${
+              d.status === "booked" ? "#ff4d4d" : "#22c55e"
+            };color:white;font-size:13px;">${d.date}</span>`
+        )
+        .join("");
+    } else {
+      cal.innerHTML = "<div class='muted'>لا توجد أيام محجوزة حالياً.</div>";
+    }
+  } catch (err) {
+    console.error(err);
   }
-} catch (err) {
-  console.error(err);
 }
+// 🖼️ تغيير الصورة عند الضغط على الصور المصغّرة
+document.addEventListener("click", (e) => {
+  const thumb = e.target.closest(".room-thumb");
+  if (!thumb) return;
 
-}
+  const box = thumb.closest(".room-image");
+  const imgEl = box.querySelector(".room-main-img");
+
+  const images = JSON.parse(box.dataset.images || "[]");
+  if (!images.length) return;
+
+  const clickedSrc = thumb.getAttribute("src");
+
+  const index = images.findIndex(
+    (img) => fixImagePath(img) === clickedSrc
+  );
+
+  if (index === -1) return;
+
+  box.dataset.index = index;
+  imgEl.src = clickedSrc;
+});
+
 
 
 function backToHotels() {
@@ -733,6 +806,57 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#bRoom")?.addEventListener("change", updatePriceSummary);
   $("#bIn")?.addEventListener("change", updatePriceSummary);
   $("#bOut")?.addEventListener("change", updatePriceSummary);
+// ==================== 🖼️ Slider غرف (مثل Airbnb) ====================
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".slider-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".room-image");
+  const imgEl = box.querySelector(".room-main-img");
+
+  const images = JSON.parse(box.dataset.images || "[]");
+  if (!images.length) return;
+
+  let index = Number(box.dataset.index || 0);
+
+  if (btn.classList.contains("next")) {
+    index = (index + 1) % images.length;
+  } else {
+    index = (index - 1 + images.length) % images.length;
+  }
+
+  box.dataset.index = index;
+  imgEl.src = fixImagePath(images[index]);
+});
+
+// دعم السحب (Swipe)
+let startX = 0;
+
+document.addEventListener("touchstart", (e) => {
+  const box = e.target.closest(".room-image");
+  if (!box) return;
+  startX = e.touches[0].clientX;
+});
+
+document.addEventListener("touchend", (e) => {
+  const box = e.target.closest(".room-image");
+  if (!box) return;
+
+  const images = JSON.parse(box.dataset.images || "[]");
+  if (images.length < 2) return;
+
+  const diff = e.changedTouches[0].clientX - startX;
+  if (Math.abs(diff) < 40) return;
+
+  let index = Number(box.dataset.index || 0);
+  index = diff < 0
+    ? (index + 1) % images.length
+    : (index - 1 + images.length) % images.length;
+
+  box.dataset.index = index;
+  box.querySelector(".room-main-img").src =
+    fixImagePath(images[index]);
+});
 
   // ثيم فاتح/داكن
   const toggle = $("#theme-toggle");
@@ -850,9 +974,12 @@ btnShowMap?.addEventListener("click", async () => {
               .addTo(markersLayer)
               .bindPopup(`
                 <div style="text-align:center;">
-                  <img src="${h.photo_url}" 
-                       alt="${h.name}" 
-                       style="width:100px;height:70px;object-fit:cover;border-radius:8px;margin-bottom:5px;">
+                   <img 
+                      src="${fixImagePath(h.photo_url)}"
+                      alt="${h.name}"
+                      style="width:100px;height:70px;object-fit:cover;border-radius:8px;margin-bottom:5px;"
+                   >
+
                   <h4 style="margin:0;font-size:14px;color:#00ffff;">${h.name}</h4>
                   <p style="margin:2px 0;font-size:12px;color:#ccc;">${h.area || ""}</p>
                   <p style="margin:0;font-size:12px;color:#aaa;">${h.address || ""}</p>

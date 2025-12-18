@@ -23,6 +23,9 @@ app.use(
 
 // 🧰 JSON
 app.use(express.json());
+// 🟢 واجهة العميل
+app.use("/client", express.static(path.join(__dirname, "client")));
+
 
 // 🖼️ ملفات الرفع (إيصالات العربون)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

@@ -30,12 +30,15 @@ router.get("/hotels", async (req, res) => {
 router.get("/rooms", async (req, res) => {
   try {
     const rows = await db.all(`
-      SELECT r.id, r.name, r.price, r.capacity, r.photo_url,
-             h.id AS hotel_id, h.name AS hotel_name, h.area, h.address
+      SELECT r.id, r.name, r.price, r.capacity,
+             r.photo_url,
+             r.photos_json,
+              h.id AS hotel_id, h.name AS hotel_name, h.area, h.address
       FROM rooms r
       JOIN hotels h ON h.id = r.hotel_id
       WHERE r.active=1 AND h.active=1
       ORDER BY h.name, r.price ASC
+
     `);
     res.json({ ok: true, rooms: rows });
   } catch (e) {

@@ -5,6 +5,8 @@ const db = require("../db/sqlite");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
+const { notifyBookingEvent } = require("../utils/booking_notifications.js");
+
 
 // 🧾 إعداد مجلد رفع الصور
 const uploadDir = path.join(__dirname, "../uploads");
@@ -31,32 +33,37 @@ router.post("/upload-proof/:bookingRef", upload.single("proof"), async (req, res
     if (!method || !amount)
       return res.status(400).json({ ok: false, error: "البيانات ناقصة" });
 
-    // ✅ التأكد أن الحجز بانتظار العربون من العميل
-    const booking = await db.get(
-      "SELECT * FROM bookings WHERE booking_ref=? AND status IN ('WAITING_CLIENT_DEPOSIT','AWAITING_DEPOSIT')",
-      [ref]
-    );
+    // 🔍 جلب بيانات الحجز + الفندق (مهم للإشعار)
+    const booking = await db.get(`
+      SELECT b.*, h.name AS hotel_name 
+      FROM bookings b 
+      JOIN hotels h ON b.hotel_id = h.id
+      WHERE b.booking_ref=? AND b.status IN ('WAITING_CLIENT_DEPOSIT','AWAITING_DEPOSIT')
+    `, [ref]);
+
     if (!booking)
       return res.status(400).json({
         ok: false,
         error: "❌ لا يمكن رفع الإيصال قبل أن يؤكد الفندق الحجز."
       });
 
-    // 💾 حفظ في جدول المدفوعات
+    // 💾 تسجيل الدفع
     await db.run(
       `INSERT INTO payments (booking_ref, method, amount, proof_url, confirmed)
-       VALUES (?, ?, ?, ?, 0)`,
+      VALUES (?,?,?,?,0)`,
       [ref, method, amount, proof_url]
     );
 
-    // 🔄 تحديث حالة الحجز مع حفظ رابط الصورة
+    // 🔄 تحديث حالة الحجز
     await db.run(
       "UPDATE bookings SET status='DEPOSIT_SENT', deposit_proof_url=?, updated_at=CURRENT_TIMESTAMP WHERE booking_ref=?",
       [proof_url, ref]
     );
 
-    const { sendDepositProofNotification } = require("../utils/booking_notifications");
-    await sendDepositProofNotification(ref);
+    // 📩 إشعار واتساب: تم رفع إيصال العربون
+    await notifyBookingEvent("DEPOSIT_UPLOADED", booking);
+
+      
 
 
     res.json({
@@ -64,11 +71,13 @@ router.post("/upload-proof/:bookingRef", upload.single("proof"), async (req, res
       message: "✅ تم رفع إثبات الدفع بنجاح. سيتم المراجعة خلال 24 ساعة.",
       proof_url
     });
+
   } catch (e) {
     console.error("Erreur /upload-proof:", e);
     res.status(500).json({ ok: false, error: "خطأ في الخادم" });
   }
 });
+
 
 // 💳 دفع المبلغ الكامل (رفع إيصال ثاني)
 router.post("/upload-final/:bookingRef", upload.single("proof"), async (req, res) => {

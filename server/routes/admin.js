@@ -128,21 +128,21 @@ router.patch("/confirm-payment/:bookingRef", async (req, res) => {
     // 📩 إشعار العميل بعد تأكيد العربون من الإدارة
     const { notifyBookingEvent } = require("../utils/booking_notifications");
 
-    const client = await db.get(`
-      SELECT 
-      b.booking_ref, 
-      b.client_name, 
-      b.client_phone, 
-      h.name AS hotel_name
-      FROM bookings b
-      JOIN hotels h ON h.id = b.hotel_id
-      WHERE b.booking_ref = ?`,
-      [ref]
-    );
+    // 🔍 جلب بيانات الحجز كاملة (مع التواريخ والسعر)
+    const fullBooking = await db.get(`
+     SELECT 
+       b.*, 
+       h.name AS hotel_name,
+       r.name AS room_name
+     FROM bookings b
+     JOIN hotels h ON h.id = b.hotel_id
+     JOIN rooms  r ON r.id = b.room_id
+     WHERE b.booking_ref = ?
+    `, [ref]);
 
-      if (client) {
-      await notifyBookingEvent("DEPOSIT_CONFIRMED", client);
-    }
+    // 📩 إرسال الإشعار الصحيح
+    await notifyBookingEvent("DEPOSIT_CONFIRMED", fullBooking);
+
 
 
     await db.run(
@@ -186,21 +186,21 @@ router.post("/approve-deposit/:bookingRef", async (req, res) => {
     // 📩 إشعار العميل بعد تأكيد العربون من الإدارة
     const { notifyBookingEvent } = require("../utils/booking_notifications");
 
-    const client = await db.get(`
+    // 🔍 جلب بيانات الحجز كاملة (مع التواريخ والسعر)
+    const fullBooking = await db.get(`
       SELECT 
-      b.booking_ref, 
-      b.client_name, 
-      b.client_phone, 
-      h.name AS hotel_name
+        b.*, 
+        h.name AS hotel_name,
+        r.name AS room_name
       FROM bookings b
       JOIN hotels h ON h.id = b.hotel_id
-      WHERE b.booking_ref = ?`,
-      [ref]
-    );
+      JOIN rooms  r ON r.id = b.room_id
+      WHERE b.booking_ref = ?
+    `, [ref]);
 
-    if (client) {
-     await notifyBookingEvent("DEPOSIT_CONFIRMED", client);
-    }
+    // 📩 إرسال الإشعار الصحيح
+    await notifyBookingEvent("DEPOSIT_CONFIRMED", fullBooking);
+
 
 
     // 🧾 سجل العملية

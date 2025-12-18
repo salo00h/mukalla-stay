@@ -643,12 +643,7 @@ input:checked + .slider::before {
   box-shadow: 0 6px 20px rgba(0, 183, 255, 0.2);
 }
 
-.room img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  border-bottom: 3px solid rgba(0, 183, 255, 0.4);
-}
+
 
 .room .meta {
   padding: 14px;
@@ -987,4 +982,89 @@ input:checked + .slider::before {
   color: gold;
   font-weight: 700;
   font-size: 0.95em;
+}
+
+
+
+
+
+/* ====================== 🖼️ سلايدر صور الغرف (نظيف وواضح) ====================== */
+
+.room-image {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #000; /* خلفية سوداء تمنع البهتان */
+}
+
+.room-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1 !important;
+  filter: none !important;
+  transition: opacity 0.25s ease;
+}
+
+/* أزرار التقليب */
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 5;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.slider-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.slider-btn.prev {
+  left: 10px;
+}
+
+.slider-btn.next {
+  right: 10px;
+}
+
+/* الصور المصغّرة */
+.room-thumbs {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  display: flex;
+  gap: 6px;
+  z-index: 6;
+}
+
+.room-thumb {
+  width: 38px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.6);
+  opacity: 0.9;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.room-thumb:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  border-color: #00b7ff;
+}
+/* ❌ إخفاء الصور المصغّرة للغرف */
+.room-thumbs {
+  display: none !important;
 }

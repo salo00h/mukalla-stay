@@ -111,13 +111,25 @@ router.post("/create", async (req, res) => {
       return res.status(404).json({ ok: false, error: "الغرفة غير موجودة" });
     }
 
-    let final_price = season ? season.price : room.price;
+    let price_per_night = season ? season.price : room.price;
+    
+
     let min_stay = season ? season.min_stay : 1;
 
     // 🔍 التحقق من الحد الأدنى للإقامة
     const checkin = new Date(checkin_date);
     const checkout = new Date(checkout_date);
     const stayDays = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+
+    let final_price = price_per_night * stayDays; // السعر الإجمالي
+
+    // ⭐ حساب العربون 5%
+    const depositAmount = Number((final_price * 0.05).toFixed(2));
+
+    // ⭐ حساب المبلغ المتبقي بعد العربون
+    const remainingAmount = Number((final_price - depositAmount).toFixed(2));
+
+    
 
     if (stayDays < min_stay) {
       return res.status(400).json({
@@ -150,13 +162,22 @@ router.post("/create", async (req, res) => {
       ]
     );
 
-    // 🔔 إشعار إنشاء الحجز الجديد
-    await notifyBookingEvent("BOOKING_CREATED", {
-     client_phone,
-     client_name,
-     booking_ref,
-     hotel_name: "MukallaStay"
-    });
+    // 🔍 جلب بيانات الحجز كاملة مع اسم الفندق بعد الإدخال
+    const bookingRow = await db.get(
+      `SELECT 
+        b.*,
+       h.name AS hotel_name,
+       r.name AS room_name
+      FROM bookings b
+      JOIN hotels h ON h.id = b.hotel_id
+      JOIN rooms  r ON r.id = b.room_id
+      WHERE b.booking_ref = ?`,
+      [booking_ref]
+    );
+
+
+    // 🔔 إرسال الإشعار الصحيح مع البيانات الحقيقية
+    await notifyBookingEvent("BOOKING_CREATED", bookingRow);
 
 
 
@@ -413,12 +434,10 @@ router.post("/approve-deposit/:ref", async (req, res) => {
     // 🔔 إشعار العميل بتأكيد العربون
     if (booking.client_phone && booking.client_phone.startsWith("+")) {
      console.log("📤 إرسال إشعار DEPOSIT_CONFIRMED إلى:", booking.client_phone);
-     await notifyBookingEvent("DEPOSIT_CONFIRMED", {
-       client_phone: booking.client_phone,
-       client_name: booking.client_name,
-       booking_ref: booking.booking_ref,
-       hotel_name: booking.hotel_name || "MukallaStay"
-      });
+     await notifyBookingEvent("DEPOSIT_CONFIRMED", booking);
+
+      
+
     } else {
       console.warn("⚠️ لا يوجد رقم هاتف صالح في هذا الحجز:", booking.booking_ref, booking.client_phone);
       console.log("📦 بيانات الحجز:", booking);
@@ -561,11 +580,13 @@ router.post("/confirm-by-hotel/:bookingRef", async (req, res) => {
     // 🔔 إشعار العميل بتأكيد الفندق
     if (booking.client_phone) {
       await notifyBookingEvent("HOTEL_CONFIRMED", {
-        client_phone: booking.client_phone,
-        client_name: booking.client_name,
-        booking_ref: booking.booking_ref,
-        hotel_name: booking.hotel_name || "MukallaStay"
+       client_phone: booking.client_phone,
+       client_name: booking.client_name,
+       booking_ref: booking.booking_ref,
+       hotel_name: booking.hotel_name || "MukallaStay",
+       final_price: booking.final_price    // أهم سطر
       });
+
     }
 
     // حفظ في سجل العمليات

@@ -1,109 +1,87 @@
 // server/utils/booking_notifications.js
-const db = require("../db/sqlite");
-const { sendWhatsAppMeta } = require("./whatsapp_meta.js");
 
+const { sendWhatsAppTemplate } = require("./whatsapp_meta.js");
 
-// 🔔 دالة الإشعارات الموحدة لجميع الأحداث
+// ======================================================
+//   🔔 دالة الإشعارات الموحدة — النسخة النهائية
+// ======================================================
 async function notifyBookingEvent(event, booking) {
   try {
+    console.log("🔥 notifyBookingEvent:", event);
+
     const phone = booking.client_phone;
-    const ref = booking.booking_ref;
+    if (!phone) return console.warn("⚠️ لا يوجد رقم هاتف:", booking.booking_ref);
+
     const name = booking.client_name || "العميل";
-    const hotel = booking.hotel_name || "أحد فنادق MukallaStay";
+    const hotel = booking.hotel_name || "MukallaStay";
+    const ref = booking.booking_ref;
+    const finalPrice = Number(booking.final_price) || 0;
 
-    if (!phone) {
-      console.warn(`⚠️ لا يوجد رقم هاتف لإرسال إشعار ${event} للحجز ${ref}`);
-      return;
+    const depositAmount = (finalPrice * 0.05).toFixed(2);
+    const remainingAmount = (finalPrice - depositAmount).toFixed(2);
+
+    // ======================================================
+    // 1️⃣  BOOKING_CREATED
+    // ======================================================
+    if (event === "BOOKING_CREATED") {
+      const arrival = booking.checkin_date?.substring(0, 10) || "غير محدد";
+      const checkout = booking.checkout_date?.substring(0, 10) || "غير محدد";
+
+      return await sendWhatsAppTemplate(phone, "booking_confirmation", [
+        name,                 // {{1}}
+        hotel,                // {{2}}
+        arrival,              // {{3}}
+        checkout,             // {{4}}
+        finalPrice + "€",     // {{5}}
+        depositAmount + "€"   // {{6}}
+      ]);
     }
 
-    let msg = "";
-    switch (event) {
-      case "BOOKING_CREATED":
-        msg = `مرحبًا ${name} 👋
-تم استلام طلب حجزك رقم ${ref} في ${hotel}.
-سيقوم الفندق بمراجعته خلال 24 ساعة.
-شكرًا لاستخدامك MukallaStay 💙`;
-        break;
-
-      case "HOTEL_CONFIRMED":
-        msg = `🏨 تمت موافقة الفندق على حجزك رقم ${ref} (${hotel}).
-يرجى دفع العربون خلال 24 ساعة لتأكيد الحجز.`;
-        break;
-
-      case "DEPOSIT_UPLOADED":
-        msg = `💰 تم استلام إيصال دفع العربون لحجزك رقم ${ref}.
-سيتم مراجعته من قِبل إدارة الموقع قريبًا.`;
-        break;
-
-      case "DEPOSIT_CONFIRMED":
-        msg = `✅ تم تأكيد العربون بنجاح.
-حجزك في ${hotel} أصبح مؤكدًا بالكامل 🎉`;
-        break;
-
-      case "REMINDER_FINAL_PAYMENT":
-        msg = `⏰ تذكير: يجب دفع المبلغ المتبقي لحجزك رقم ${ref} قبل 5 أيام من تاريخ الوصول لتجنب الإلغاء.`;
-        break;
-
-      case "BOOKING_CANCELLED":
-        msg = `❌ تم إلغاء حجزك رقم ${ref} بسبب عدم إتمام الإجراءات المطلوبة في الوقت المحدد.
-نأمل حجزك معنا مرة أخرى 💙`;
-        break;
-
-      default:
-        console.log("⚠️ حدث غير معروف:", event);
-        return;
+    // ======================================================
+    // 2️⃣ HOTEL_CONFIRMED
+    // ======================================================
+    if (event === "HOTEL_CONFIRMED") {
+      return await sendWhatsAppTemplate(phone, "hotel_confirmed", [
+        name,                   // {{1}}
+        hotel,                  // {{2}}
+        ref,                    // {{3}}
+        depositAmount + "€"     // {{4}}
+      ]);
     }
 
-    console.log(`🚀 إرسال إشعار ${event} إلى ${phone}`);
-    await sendWhatsAppMeta(phone, msg);
+    // ======================================================
+    // 3️⃣ DEPOSIT_UPLOADED
+    // ======================================================
+    if (event === "DEPOSIT_UPLOADED") {
+      return await sendWhatsAppTemplate(phone, "deposit_uploaded", [
+        name,   // {{1}}
+        ref     // {{2}}
+      ]);
+    }
+
+    // ======================================================
+    // 4️⃣ DEPOSIT_CONFIRMED — تم اعتماد العربون
+    // ======================================================
+    if (event === "DEPOSIT_CONFIRMED") {
+      const arrival = booking.checkin_date?.substring(0, 10) || "غير محدد";
+      const checkout = booking.checkout_date?.substring(0, 10) || "غير محدد";
+
+      return await sendWhatsAppTemplate(phone, "deposit_confirmed", [
+        name,                     // {{1}}
+        ref,                    // {{2}}
+        hotel,                      // {{3}}
+        arrival,                  // {{4}}
+        checkout,                 // {{5}}
+        finalPrice + "€",         // {{6}}
+        remainingAmount + "€"     // {{7}}
+      ]);
+    }
+
+    console.log("⚠️ حدث غير مدعوم:", event);
+
   } catch (err) {
-    console.error(`❌ خطأ أثناء تنفيذ notifyBookingEvent (${event}):`, err.message);
+    console.error("❌ notifyBookingEvent ERROR:", err);
   }
 }
 
-// 🧾 إشعار خاص عند رفع إيصال العربون
-// 🧾 إشعار خاص عند رفع إيصال العربون
-async function sendDepositProofNotification(bookingRef) {
-  try {
-    const booking = await db.get(
-      `SELECT 
-         b.booking_ref, 
-         b.client_name, 
-         b.client_phone, 
-         h.name AS hotel_name
-       FROM bookings b
-       JOIN hotels h ON h.id = b.hotel_id
-       WHERE b.booking_ref = ?`,
-      [bookingRef]
-    );
-
-    if (!booking) {
-      console.warn("⚠️ لم يتم العثور على بيانات الحجز لإرسال الإشعار.");
-      return;
-    }
-
-    if (!booking.client_phone) {
-      console.warn(`⚠️ لا يوجد رقم هاتف للحجز ${booking.booking_ref}.`);
-      return;
-    }
-
-    const msg = `💰 عزيزي ${booking.client_name}،
-تم استلام إيصال دفع العربون بنجاح ✅
-سيتم مراجعته من قِبل إدارة الموقع خلال الساعات القادمة.
-رقم الحجز: ${booking.booking_ref}
-الفندق: ${booking.hotel_name}
-شكرًا لاستخدامك MukallaStay 💙`;
-
-    console.log(`🚀 إرسال إشعار إيصال الدفع إلى ${booking.client_phone}`);
-    await sendWhatsAppMeta(booking.client_phone, msg);
-
-
-  } catch (err) {
-    console.error("❌ خطأ أثناء إرسال إشعار إيصال العربون:", err);
-  }
-}
-
-module.exports = {
-  notifyBookingEvent,
-  sendDepositProofNotification,
-};
+module.exports = { notifyBookingEvent };
