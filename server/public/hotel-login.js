@@ -1,5 +1,5 @@
 // server/public/hotel-login.js
-const API = window.location.origin;
+
 
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
