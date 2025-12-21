@@ -7,6 +7,7 @@ const path = require("path");
 const { initSchema } = require("./db/sqlite");
 const fs = require("fs");
 require("dotenv").config();
+const { sendContact } = require("./utils/send_contact");
 
 
 const app = express();
@@ -78,6 +79,28 @@ app.use("/api/admin", require("./routes/admin_dashboard"));
 
 
 
+// 📩 Webhook WhatsApp: أي رسالة → رد بجهة اتصال
+app.post("/webhook", async (req, res) => {
+  try {
+    const entry = req.body.entry?.[0];
+    const change = entry?.changes?.[0];
+    const message = change?.value?.messages?.[0];
+
+    if (message && message.from) {
+      const from = message.from;
+
+      console.log("📩 Incoming WhatsApp message from:", from);
+
+      // رد تلقائي بجهة اتصال
+      await sendContact(from);
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
+    res.sendStatus(200);
+  }
+});
 
 
 
