@@ -8,7 +8,6 @@ const HEADERS = {
 
 async function sendAutoReply(to) {
   try {
-    // 1️⃣ رسالة نصية توضيحية
     await axios.post(
       META_URL,
       {
@@ -18,41 +17,15 @@ async function sendAutoReply(to) {
         text: {
           body:
             "⚠️ لم يتم استلام رسالتك هنا.\n\n" +
-            "يرجى التواصل مباشرة مع فريق الدعم عبر هذا الرقم:",
+            "يرجى التواصل مباشرة مع فريق الدعم عبر هذا الرقم:\n\n" +
+            "👉 https://wa.me/33777263112\n\n" +
+            "MukallaStay Support",
         },
       },
       { headers: HEADERS }
     );
 
-    // 2️⃣ جهة اتصال صحيحة مع مفتاح الدولة
-    await axios.post(
-      META_URL,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "contacts",
-        contacts: [
-          {
-            name: {
-              formatted_name: "MukallaStay Support",
-              first_name: "MukallaStay",
-              last_name: "Support",
-            },
-            phones: [
-              {
-                phone: "33777263112", // الرقم بدون +
-                country_code: "FR",   // ⭐ مهم جدًا
-                type: "WORK",
-                wa_id: "33777263112",
-              },
-            ],
-          },
-        ],
-      },
-      { headers: HEADERS }
-    );
-
-    console.log("✅ Auto reply (text + contact) sent");
+    console.log("✅ Auto reply sent (safe mode)");
   } catch (err) {
     console.error(
       "❌ WhatsApp auto-reply error:",
