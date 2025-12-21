@@ -8,7 +8,26 @@ const HEADERS = {
 
 async function sendAutoReply(to) {
   try {
-    // 1️⃣ إرسال جهة اتصال
+    // 1️⃣ الرسالة أولاً
+    await axios.post(
+      META_URL,
+      {
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: {
+          body:
+            "⚠️ لم يتم استلام رسالتك هنا.\n\n" +
+            "يرجى التواصل مباشرة مع فريق الدعم.\n\n" +
+            "يمكنك مراسلتنا عبر الرابط أو حفظ جهة الاتصال بالأسفل 👇\n\n" +
+            "👉 https://wa.me/33777263112\n\n" +
+            "MukallaStay Support",
+        },
+      },
+      { headers: HEADERS }
+    );
+
+    // 2️⃣ جهة الاتصال بعدها
     await axios.post(
       META_URL,
       {
@@ -35,27 +54,12 @@ async function sendAutoReply(to) {
       { headers: HEADERS }
     );
 
-    // 2️⃣ إرسال رسالة مع رابط يفتح الدردشة مباشرة
-    await axios.post(
-      META_URL,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: {
-          body:
-            "⚠️ لم يتم استلام رسالتك هنا.\n\n" +
-            "يرجى التواصل مباشرة مع فريق الدعم عبر هذا الرقم:\n\n" +
-            "👉 https://wa.me/33777263112\n\n" +
-            "MukallaStay Support",
-        },
-      },
-      { headers: HEADERS }
-    );
-
-    console.log("✅ Contact + link sent");
+    console.log("✅ Text then Contact sent");
   } catch (err) {
-    console.error("❌ WhatsApp error:", err.response?.data || err.message);
+    console.error(
+      "❌ WhatsApp auto-reply error:",
+      err.response?.data || err.message
+    );
   }
 }
 
