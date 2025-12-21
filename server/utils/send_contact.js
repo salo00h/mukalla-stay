@@ -8,6 +8,34 @@ const HEADERS = {
 
 async function sendAutoReply(to) {
   try {
+    // 1️⃣ إرسال جهة اتصال
+    await axios.post(
+      META_URL,
+      {
+        messaging_product: "whatsapp",
+        to,
+        type: "contacts",
+        contacts: [
+          {
+            name: {
+              formatted_name: "MukallaStay Support",
+              first_name: "MukallaStay",
+              last_name: "Support",
+            },
+            phones: [
+              {
+                phone: "33777263112", // بدون +
+                type: "WORK",
+                wa_id: "33777263112",
+              },
+            ],
+          },
+        ],
+      },
+      { headers: HEADERS }
+    );
+
+    // 2️⃣ إرسال رسالة مع رابط يفتح الدردشة مباشرة
     await axios.post(
       META_URL,
       {
@@ -25,12 +53,9 @@ async function sendAutoReply(to) {
       { headers: HEADERS }
     );
 
-    console.log("✅ Auto reply sent (safe mode)");
+    console.log("✅ Contact + link sent");
   } catch (err) {
-    console.error(
-      "❌ WhatsApp auto-reply error:",
-      err.response?.data || err.message
-    );
+    console.error("❌ WhatsApp error:", err.response?.data || err.message);
   }
 }
 
